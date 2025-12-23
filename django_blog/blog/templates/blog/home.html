@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>College Marks Calculator</title>
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body { background-color: #f4f4f4; }
+    .navbar {
+      background-image: url('https://www.kalasalingam.ac.in/wp-content/uploads/2021/08/building-4-scaled.jpg');
+      background-size: cover;
+      background-position: center;
+      height: 200px;
+      display: flex;
+      align-items: center;
+      color: white;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+    .navbar-brand {
+      font-size: 28px;
+      font-weight: bold;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    }
+    .created-by {
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+      margin-top: 10px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    }
+    .subject {
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      background: #fff;
+      margin-bottom: 20px;
+    }
+    .result {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 30px;
+    }
+    footer {
+      text-align: center;
+      padding: 15px;
+      background-color: #222;
+      color: #fff;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+    }
+    .nav-links { margin-top: 20px; text-align: center; }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg">
+    <div class="container">
+      <a class="navbar-brand" href="#">College Marks Calculator</a>
+    </div>
+  </nav>
+  <div class="created-by bg-dark py-2">SECOND YEAR MARKS CALCULATOR</div>
+
+  <!-- Navigation Links -->
+  <div class="nav-links">
+    <a href="/students/" class="btn btn-info m-2">📋 View Students</a>
+    <a href="/lookup/" class="btn btn-warning m-2">🔎 Lookup Results</a>
+  </div>
+
+  <!-- Main Container -->
+  <div class="container mt-4 mb-5">
+
+    <!-- Student Info -->
+    <div class="card p-3 mb-4">
+      <h5 class="card-title">Student Information</h5>
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" id="studentName" class="form-control" placeholder="Enter student name">
+      </div>
+      <div class="form-group">
+        <label>Register Number</label>
+        <input type="text" id="registerNumber" class="form-control" placeholder="Enter register number">
+      </div>
+    </div>
+
+    <!-- Series Selection -->
+    <div class="card p-3 mb-4">
+      <h5 class="card-title">Select Series</h5>
+      <select class="form-control" id="seriesSelect" onchange="updateSubjects()">
+        <option value="">-- Select Series --</option>
+        <option value="CSE">CSE</option>
+        <option value="ECE">ECE</option>
+      </select>
+    </div>
+
+    <!-- Subjects -->
+    <div class="row" id="subjectsContainer"></div>
+
+    <!-- Buttons -->
+    <div class="mt-4">
+      <button type="button" class="btn btn-primary btn-lg w-100 mb-3" onclick="calculateMarks()">Calculate & Save</button>
+      <button type="button" class="btn btn-success btn-lg w-100" onclick="downloadPDF()">Download PDF</button>
+    </div>
+
+    <!-- Results -->
+    <div class="result" id="output"></div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    &copy; 2025 | College Marks Calculator | Kalasalingam
+  </footer>
+
+  <!-- Script -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    // Helper to get CSRF token from cookie
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          // Does this cookie string begin with the name we want?
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+    const seriesMap = {
+      CSE: ['JAVA', 'DPSD', 'DS', 'DA', 'MATHS', 'IOT'],
+      ECE: ['MATHS', 'IOT', 'RFID', 'SIGNALS AND SYSTEM', 'DIGITALS AND CIRCUITS']
+    };
+
+    function createSubjectBlock(id, title) {
+      return `
+        <div class="col-md-6 subject">
+          <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+              <h5 class="card-title">${title}</h5>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <label>Sessional 1 (50)</label>
+                <input type="number" id="${id}_s1" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>Sessional 2 (50)</label>
+                <input type="number" id="${id}_s2" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>Semester (100)</label>
+                <input type="number" id="${id}_sem" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>Laboratory (30)</label>
+                <input type="number" id="${id}_lab" class="form-control">
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function updateSubjects() {
+      const selected = document.getElementById('seriesSelect').value;
+      const container = document.getElementById('subjectsContainer');
+      container.innerHTML = '';
+      if (selected) {
+        seriesMap[selected].forEach(sub => {
+          container.innerHTML += createSubjectBlock(sub, sub);
+        });
+      }
+    }
+
+    function getGrade(mark) {
+      if (mark >= 90) return 'O';
+      if (mark >= 80) return 'A+';
+      if (mark >= 70) return 'A';
+      if (mark >= 60) return 'B+';
+      if (mark >= 50) return 'B';
+      if (mark >= 40) return 'C';
+      return 'F';
+    }
+
+    function calcMarks(s1, s2, sem, lab) {
+      return (s1 / 50 * 17.5) + (s2 / 50 * 17.5) + (sem / 100 * 35) + (lab / 30 * 30);
+    }
+
+    function calculateMarks() {
+      const name = document.getElementById('studentName').value;
+      const regNo = document.getElementById('registerNumber').value;
+      const selected = document.getElementById('seriesSelect').value;
+
+      if (!name || !regNo) {
+        alert("Please enter Student Name and Register Number!");
+        return;
+      }
+      if (!selected) {
+        alert("Please select a series first!");
+        return;
+      }
+
+      let outputHTML = `<h5>${selected} Results</h5>`;
+      outputHTML += `<p><strong>Name:</strong> ${name}</p>`;
+      outputHTML += `<p><strong>Register Number:</strong> ${regNo}</p>`;
+
+      let resultsArray = [];
+
+      seriesMap[selected].forEach(sub => {
+        let s1 = +document.getElementById(sub + '_s1').value || 0;
+        let s2 = +document.getElementById(sub + '_s2').value || 0;
+        let sem = +document.getElementById(sub + '_sem').value || 0;
+        let lab = +document.getElementById(sub + '_lab').value || 0;
+        let marks = calcMarks(s1, s2, sem, lab);
+        let grade = getGrade(marks);
+        let status = marks >= 40 ? 'Pass' : 'Fail';
+
+        outputHTML += `<p><strong>${sub}</strong>: ${marks.toFixed(2)} | Grade: ${grade} | ${status}</p>`;
+
+        resultsArray.push({subject: sub, s1, s2, sem, lab, marks, grade, status});
+      });
+
+      document.getElementById('output').innerHTML = outputHTML;
+
+      // Save results in Django
+      fetch("/save_result/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCookie("csrftoken")
+        },
+        body: JSON.stringify({
+          name: name,
+          registerNumber: regNo,
+          series: selected,
+          results: resultsArray
+        })
+      }).then(res => res.json()).then(data => {
+        if (data.success) {
+          alert("Results saved successfully!");
+        } else {
+          alert("Error saving results: " + (data.error || "Unknown error"));
+        }
+      });
+    }
+
+    function downloadPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      let content = document.getElementById('output').innerText;
+      if (!content.trim()) {
+        alert("Please calculate results first!");
+        return;
+      }
+
+      // Header
+      doc.setFontSize(14);
+      doc.text("KALASALINGAM ACADEMY OF RESEARCH AND EDUCATION", 10, 15);
+
+      // Title
+      doc.setFontSize(16);
+      doc.text("College Marks Report", 60, 30);
+
+      // Results
+      doc.setFontSize(12);
+      let lines = doc.splitTextToSize(content, 180);
+      doc.text(lines, 10, 50);
+
+      // Motivational line (just after results)
+      let yPos = 50 + lines.length * 7; // dynamically place after results
+      doc.setFontSize(11);
+      doc.text("A single paper can't decide your future", 10, yPos + 10);
+
+      // Footer
+      doc.setFontSize(10);
+      doc.text("Generated by College Marks Calculator", 10, 280);
+
+      doc.save("marks_result.pdf");
+    }
+  </script>
+</body>
+</html>

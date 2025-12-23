@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Result Lookup</title>
+</head>
+<body>
+    <h1>Search Student Results</h1>
+
+    <form method="get">
+        <input type="text" name="register_number" placeholder="Enter Register Number" value="{{ query|default:'' }}">
+        <button type="submit">Search</button>
+    </form>
+
+    {% if query %}
+        {% if student %}
+            <h2>{{ student.name }} ({{ student.register_number }})</h2>
+            <table border="1">
+                <tr>
+                    <th>Subject</th>
+                    <th>Marks</th>
+                    <th>Status</th>
+                    <th>Grade</th>
+                </tr>
+                {% for result in student.results.all %}
+                <tr>
+                    <td>{{ result.subject }}</td>
+                    <td>{{ result.marks }}</td>
+                    <td>{{ result.status }}</td>
+                    <td>{{ result.grade }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        {% else %}
+            <p>No results found for register number "{{ query }}"</p>
+        {% endif %}
+    {% endif %}
+</body>
+</html>
