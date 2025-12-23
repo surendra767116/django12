@@ -97,12 +97,13 @@ A simple blog application built with Django 3.2.14, ready for deployment on Rend
    Add the following environment variables in Render:
    - `SECRET_KEY`: Generate a secure random key
    - `DEBUG`: `False`
-   - `ALLOWED_HOSTS`: Your Render URL (e.g., `your-app-name.onrender.com`)
+   - `ALLOWED_HOSTS`: Your Render URL (e.g., `your-app-name.onrender.com` or use `.onrender.com` to allow all Render subdomains)
    - `DATABASE_URL`: Internal Database URL from PostgreSQL database
 
 4. **Deploy:**
    - Click "Create Web Service"
    - Render will automatically build and deploy your application
+   - After the first deployment, update the `ALLOWED_HOSTS` environment variable with your actual Render URL if you used `.onrender.com`
 
 ### Important Notes for Render Deployment
 
@@ -134,12 +135,14 @@ django12/
 
 ## Dependencies
 
-- Django 3.2.14 - Web framework
-- gunicorn 21.2.0 - WSGI HTTP server
+- Django 3.2.25 - Web framework (Latest LTS 3.2.x release)
+- gunicorn 22.0.0 - WSGI HTTP server
 - whitenoise 6.6.0 - Static file serving
 - psycopg2-binary 2.9.9 - PostgreSQL adapter
 - dj-database-url 2.1.0 - Database URL parsing
 - python-decouple 3.8 - Environment variable management
+
+**Note:** Django 3.2.x is an LTS (Long Term Support) version that receives security updates until April 2024. For production applications requiring support beyond this date, consider upgrading to Django 4.2 LTS (supported until April 2026) or later versions.
 
 ## Environment Variables
 
